@@ -4,6 +4,6 @@ import 'app.dart';
 
 void main (){
 
-  runApp(caretutorApp ());
+  runApp(caretutorApp());
 
 }

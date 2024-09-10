@@ -159,7 +159,7 @@ class _SignInScreenState extends State<SignInScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => const MainBottomNavScreen(),
+            builder: (context) =>  MainBottomNavScreen(),
           ),
         );
       }
@@ -178,7 +178,7 @@ class _SignInScreenState extends State<SignInScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const SignUpScreen(),
+        builder: (context) => SignUpScreen(),
       ),
     );
   }

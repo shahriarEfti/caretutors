@@ -1,6 +1,7 @@
 import 'package:caretutors/ui/screens/auth/sign_in_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart'; // Import GetX package
 
 import '../../../data/models/network_response.dart';
 import '../../../data/network_callers/network_caller.dart';
@@ -8,9 +9,8 @@ import '../../../data/utilities/urls.dart';
 import '../../utility/app_colors.dart';
 import '../../widgets/background_widget.dart';
 
-
-class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({
+class ResetPasswordScreen extends StatelessWidget {
+  ResetPasswordScreen({
     super.key,
     required this.email,
     required this.otp,
@@ -19,14 +19,10 @@ class ResetPasswordScreen extends StatefulWidget {
   final String email;
   final String otp;
 
-  @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
-}
-
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  final TextEditingController _confirmPasswordTEController = TextEditingController();
+  // Define controllers and loading state in GetX Controller
+  final RxBool _loadingInProgress = false.obs;
   final TextEditingController _passwordTEController = TextEditingController();
-  bool _loadingInProgress = false;
+  final TextEditingController _confirmPasswordTEController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -49,22 +45,26 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 24),
-                  TextFormField(
+                  Obx(() => TextFormField(
                     controller: _passwordTEController,
                     decoration: const InputDecoration(hintText: 'Password'),
                     obscureText: true,
-                  ),
+                    enabled: !_loadingInProgress.value,
+                  )),
                   const SizedBox(height: 8),
-                  TextFormField(
+                  Obx(() => TextFormField(
                     controller: _confirmPasswordTEController,
                     decoration: const InputDecoration(hintText: 'Confirm Password'),
                     obscureText: true,
-                  ),
+                    enabled: !_loadingInProgress.value,
+                  )),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _onTapConfirmButton,
-                    child: const Text('Confirm'),
-                  ),
+                  Obx(() => ElevatedButton(
+                    onPressed: _loadingInProgress.value ? null : _onTapConfirmButton,
+                    child: _loadingInProgress.value
+                        ? const CircularProgressIndicator()
+                        : const Text('Confirm'),
+                  )),
                   const SizedBox(height: 36),
                   Center(
                     child: RichText(
@@ -80,12 +80,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             text: 'Sign in',
                             style: const TextStyle(color: AppColors.themeColor),
                             recognizer: TapGestureRecognizer()
-                              ..onTap = _onTapSignInButton,
+                              ..onTap = () => _onTapSignInButton(),
                           )
                         ],
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -96,11 +96,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   void _onTapSignInButton() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const SignInScreen()),
-          (route) => false,
-    );
+    Get.offAll(() => const SignInScreen());
   }
 
   void _onTapConfirmButton() {
@@ -112,13 +108,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Future<void> _resetPassword() async {
-    setState(() {
-      _loadingInProgress = true;
-    });
+    _loadingInProgress.value = true;
 
     Map<String, dynamic> requestInput = {
-      "email": widget.email,
-      "OTP": widget.otp,
+      "email": email,
+      "OTP": otp,
       "password": _confirmPasswordTEController.text
     };
 
@@ -127,9 +121,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       body: requestInput,
     );
 
-    setState(() {
-      _loadingInProgress = false;
-    });
+    _loadingInProgress.value = false;
 
     if (response.responseData['status'] == 'success') {
       _clearTextField();
@@ -146,44 +138,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+    Get.defaultDialog(
+      title: 'Error',
+      middleText: message,
+      textConfirm: 'OK',
+      confirmTextColor: Colors.white,
+      onConfirm: () => Get.back(),
     );
   }
 
   void _showSuccessDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Success'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _onTapSignInButton();
-            },
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+    Get.defaultDialog(
+      title: 'Success',
+      middleText: message,
+      textConfirm: 'OK',
+      confirmTextColor: Colors.white,
+      onConfirm: () {
+        Get.back();
+        _onTapSignInButton();
+      },
     );
-  }
-
-  @override
-  void dispose() {
-    _passwordTEController.dispose();
-    _confirmPasswordTEController.dispose();
-    super.dispose();
   }
 }
